@@ -1,0 +1,275 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Admin Dashboard - Roblox Shop</title>
+  <link rel="stylesheet" href="css/style.css"/>
+  <style>
+    .admin-login {
+      max-width: 400px;
+      margin: 100px auto;
+      padding: 30px;
+      background: rgba(0,0,0,0.4);
+      backdrop-filter: blur(10px);
+      border-radius: 12px;
+      border: 1px solid rgba(255,255,255,0.1);
+      animation: fadeIn 0.5s ease-out;
+    }
+
+    .admin-panel {
+      animation: slideDown 0.5s ease-out;
+    }
+
+    .admin-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 30px;
+      padding-bottom: 15px;
+      border-bottom: 1px solid rgba(255,255,255,0.1);
+    }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 15px;
+      margin-bottom: 30px;
+    }
+
+    .stat-card {
+      background: rgba(0,0,0,0.3);
+      padding: 20px;
+      border-radius: 10px;
+      border: 1px solid rgba(255,255,255,0.05);
+    }
+
+    .stat-number {
+      font-size: 24px;
+      font-weight: bold;
+      color: var(--accent);
+      margin: 10px 0;
+    }
+
+    .transaction-card {
+      background: rgba(0,0,0,0.3);
+      padding: 15px;
+      border-radius: 10px;
+      margin-bottom: 10px;
+      border: 1px solid rgba(255,255,255,0.05);
+      transition: all 0.3s ease;
+    }
+
+    .transaction-card:hover {
+      transform: translateY(-2px);
+      border-color: var(--accent);
+    }
+
+    .btn-group {
+      display: flex;
+      gap: 8px;
+      margin-top: 10px;
+    }
+
+    .btn-confirm {
+      background: #2ecc71;
+    }
+
+    .btn-decline {
+      background: #e74c3c;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    @keyframes slideDown {
+      from { 
+        opacity: 0;
+        transform: translateY(-20px);
+      }
+      to { 
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- Login Form -->
+  <div id="loginForm" class="admin-login">
+    <h2 style="margin:0 0 20px 0;color:var(--accent)">Admin Dashboard</h2>
+    <div style="margin-bottom:15px">
+      <input id="adminPass" 
+             type="password"
+             class="input" 
+             placeholder="Admin Passphrase"
+             style="width:100%"/>
+    </div>
+    <button id="adminLogin" class="btn" style="width:100%">Đăng Nhập</button>
+  </div>
+
+  <!-- Admin Panel -->
+  <div id="adminArea" class="admin-panel" style="display:none">
+    <div class="container">
+      <div class="admin-header">
+        <div>
+          <h2 style="margin:0">Admin Dashboard</h2>
+          <div style="color:var(--muted);margin-top:5px">Quản lý giao dịch và người dùng</div>
+        </div>
+        <button onclick="logout()" class="small-btn">Đăng xuất</button>
+      </div>
+
+      <!-- Stats Overview -->
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="muted">Giao dịch chờ</div>
+          <div class="stat-number" id="pendingCount">0</div>
+        </div>
+        <div class="stat-card">
+          <div class="muted">Tổng người dùng</div>
+          <div class="stat-number" id="userCount">0</div>
+        </div>
+        <div class="stat-card">
+          <div class="muted">Tổng giao dịch</div>
+          <div class="stat-number" id="totalTxn">0</div>
+        </div>
+      </div>
+
+      <h3>Giao Dịch Chờ Xác Nhận</h3>
+      <div id="pendingList"></div>
+
+      <h3 style="margin-top:30px">Danh Sách Người Dùng</h3>
+      <div id="usersList"></div>
+    </div>
+  </div>
+
+  <script>
+    // simple admin pass (change this value in future)
+    const ADMIN_PASS = 'hoangnamphong1962008';
+
+    function $(s){return document.querySelector(s);}
+    function renderPending(){
+      const pend = JSON.parse(localStorage.getItem('topup_pending')||'[]');
+      const el = $('#pendingList');
+      $('#pendingCount').textContent = pend.length;
+
+      if(pend.length===0){ 
+        el.innerHTML = '<div class="muted" style="text-align:center;padding:20px">Không có giao dịch chờ xử lý</div>';
+        return;
+      }
+
+      el.innerHTML = pend.map((p,i)=>`
+        <div class="transaction-card">
+          <div style="display:flex;justify-content:space-between">
+            <strong>${p.username}</strong>
+            <div class="muted">${new Date(p.time).toLocaleString()}</div>
+          </div>
+          <div style="margin:8px 0">
+            <div>Số tiền: <strong>${p.amount.toLocaleString()} đ</strong></div>
+            <div>Kênh nạp: ${p.channel}</div>
+            <div>Mã GD: <code>${p.txn||'-'}</code></div>
+          </div>
+          <div class="btn-group">
+            <button data-idx="${i}" class="btn btn-confirm confirm">Xác nhận</button>
+            <button data-idx="${i}" class="btn btn-decline" onclick="decline(${i})">Từ chối</button>
+          </div>
+        </div>
+      `).join('');
+      // attach listeners
+      document.querySelectorAll('.confirm').forEach(b=>{
+        b.addEventListener('click', e=>{
+          const idx = Number(e.currentTarget.dataset.idx);
+          confirmTopup(idx);
+        });
+      });
+    }
+
+    function confirmTopup(idx){
+      let pend = JSON.parse(localStorage.getItem('topup_pending')||'[]');
+      const p = pend[idx];
+      if(!p) return alert('Không tìm được giao dịch');
+      // credit user
+      const users = JSON.parse(localStorage.getItem('sh_users')||'{}');
+      if(!users[p.username]) return alert('User không tồn tại');
+      users[p.username].balance = (Number(users[p.username].balance||0) + Number(p.amount));
+      localStorage.setItem('sh_users', JSON.stringify(users));
+      // move to history
+      const hist = JSON.parse(localStorage.getItem('topup_history')||'[]');
+      p.status = 'confirmed'; p.confirmed_at = Date.now();
+      hist.push(p);
+      localStorage.setItem('topup_history', JSON.stringify(hist));
+      // remove from pending
+      pend.splice(idx,1);
+      localStorage.setItem('topup_pending', JSON.stringify(pend));
+      alert('Đã cộng tiền cho user: ' + p.username);
+      renderPending(); renderUsers();
+    }
+
+    function decline(idx){
+      let pend = JSON.parse(localStorage.getItem('topup_pending')||'[]');
+      const p = pend[idx];
+      if(!p) return;
+      p.status = 'declined'; p.declined_at = Date.now();
+      const hist = JSON.parse(localStorage.getItem('topup_history')||'[]'); hist.push(p); localStorage.setItem('topup_history', JSON.stringify(hist));
+      pend.splice(idx,1); localStorage.setItem('topup_pending', JSON.stringify(pend));
+      renderPending(); renderUsers();
+    }
+
+    function renderUsers(){
+      const users = JSON.parse(localStorage.getItem('sh_users')||'{}');
+      const el = $('#usersList');
+      $('#userCount').textContent = Object.keys(users).length;
+
+      if(!Object.keys(users).length) {
+        el.innerHTML = '<div class="muted" style="text-align:center;padding:20px">Chưa có người dùng</div>';
+        return;
+      }
+
+      el.innerHTML = Object.keys(users).map(u=>`
+        <div class="transaction-card">
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <div>
+              <strong>${u}</strong>
+              <div class="muted">ID: ${users[u].id || 'N/A'}</div>
+            </div>
+            <div>
+              <div>Số dư: <strong>${Number(users[u].balance||0).toLocaleString()} đ</strong></div>
+              <div class="muted">Ngày tạo: ${new Date(users[u].createdAt).toLocaleDateString()}</div>
+            </div>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function logout() {
+      if(confirm('Bạn có chắc muốn đăng xuất?')) {
+        $('#loginForm').style.display = 'block';
+        $('#adminArea').style.display = 'none';
+        $('#adminPass').value = '';
+      }
+    }
+
+    $('#adminLogin').addEventListener('click', ()=>{
+      const v = $('#adminPass').value;
+      if(v === ADMIN_PASS){
+        $('#loginForm').style.display = 'none';
+        $('#adminArea').style.display = 'block';
+        renderPending();
+        renderUsers();
+      } else {
+        alert('Sai passphrase!');
+        $('#adminPass').value = '';
+      }
+    });
+
+    // Handle Enter key in password field
+    $('#adminPass').addEventListener('keyup', (e) => {
+      if(e.key === 'Enter') {
+        $('#adminLogin').click();
+      }
+    });
+  </script>
+</body>
+</html>
