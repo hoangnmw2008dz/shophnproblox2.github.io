@@ -1,0 +1,26 @@
+<div class="payment-modal">
+  <h2>Thanh toán</h2>
+  
+  <div class="qr-code">
+    <!-- QR code sẽ được generate -->
+    <img id="qrCode" src="" alt="QR Payment">
+  </div>
+
+  <div class="upload-bill">
+    <h3>Xác nhận thanh toán</h3>
+    <input type="file" id="billUpload" accept="image/*">
+    <button onclick="submitBill()">Gửi hóa đơn</button>
+  </div>
+</div>
+
+<script>
+function generateQR(amount) {
+  // Generate QR code với số tiền
+}
+
+function submitBill() {
+  // Xử lý upload bill
+  const bill = document.getElementById('billUpload').files[0];
+  // Gửi bill lên server để xác nhận
+}
+</script>

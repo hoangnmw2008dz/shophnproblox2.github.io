@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Profile</title>
+    <style>
+        .chat-box {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 300px;
+            background: #fff;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            display: none;
+            z-index: 1000;
+        }
+
+        .chat-header {
+            padding: 10px;
+            background: #007bff;
+            color: white;
+            border-radius: 10px 10px 0 0;
+        }
+
+        .chat-messages {
+            height: 300px;
+            overflow-y: auto;
+            padding: 10px;
+        }
+
+        .chat-input {
+            padding: 10px;
+            border-top: 1px solid #ddd;
+        }
+
+        .chat-trigger {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 60px;
+            height: 60px;
+            background: #007bff;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+    </style>
+</head>
+<body>
+    <div class="profile-page">
+        <div class="user-info">
+            <h2>Thông tin tài khoản</h2>
+            <div>Tên: <span id="username"></span></div>
+            <div>Số dư: <span id="balance"></span></div>
+        </div>
+
+        <div class="history">
+            <h3>Lịch sử giao dịch</h3>
+            <div id="transactionHistory"></div>
+            
+            <h3>Lịch sử nạp tiền</h3>
+            <div id="depositHistory"></div>
+        </div>
+
+        <div class="admin-chat">
+            <h3>Liên hệ Admin</h3>
+            <div id="adminMessages" class="chat-messages"></div>
+            <div class="chat-input">
+                <input type="text" id="messageInput" placeholder="Nhập tin nhắn...">
+                <button onclick="sendMessage()">Gửi</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Chat Box Button -->
+    <div class="chat-trigger" onclick="toggleChat()">
+        <i class="fas fa-comments"></i>
+    </div>
+
+    <!-- Chat Box -->
+    <div id="chatBox" class="chat-box">
+        <div class="chat-header">
+            <span>Chat với Admin</span>
+            <span style="float:right;cursor:pointer" onclick="toggleChat()">✕</span>
+        </div>
+        <div class="chat-messages" id="chatMessages"></div>
+        <div class="chat-input">
+            <input type="text" placeholder="Nhập tin nhắn..." onkeypress="handleKeyPress(event)">
+            <button onclick="sendChatMessage()">Gửi</button>
+        </div>
+    </div>
+
+    <script>
+        function toggleChat() {
+            const chatBox = document.getElementById('chatBox');
+            chatBox.style.display = chatBox.style.display === 'none' ? 'block' : 'none';
+        }
+
+        function sendChatMessage() {
+            // Xử lý gửi tin nhắn
+        }
+
+        function handleKeyPress(e) {
+            if (e.key === 'Enter') {
+                sendChatMessage();
+            }
+        }
+
+        // Load lịch sử
+        function loadHistory() {
+            const transactions = JSON.parse(localStorage.getItem('transactions') || '[]');
+            const deposits = JSON.parse(localStorage.getItem('deposits') || '[]');
+            
+            document.getElementById('transactionHistory').innerHTML = transactions
+                .map(t => `<div class="history-item">
+                    <div>Ngày: ${t.date}</div>
+                    <div>Loại: ${t.type}</div>
+                    <div>Số tiền: ${t.amount}</div>
+                </div>`).join('');
+
+            document.getElementById('depositHistory').innerHTML = deposits
+                .map(d => `<div class="history-item">
+                    <div>Ngày: ${d.date}</div>
+                    <div>Số tiền: ${d.amount}</div>
+                    <div>Trạng thái: ${d.status}</div>
+                </div>`).join('');
+        }
+
+        // Load user info
+        function loadUserInfo() {
+            const user = JSON.parse(localStorage.getItem('currentUser') || '{}');
+            document.getElementById('username').textContent = user.username || '';
+            document.getElementById('balance').textContent = user.balance || '0';
+        }
+
+        // Load khi trang được mở
+        loadUserInfo();
+        loadHistory();
+    </script>
+</body>
+</html>
